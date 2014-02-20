@@ -2,7 +2,7 @@ module MPTCPOptionsParser
   def self.parse(byte_string)
     bytes = byte_string.bytes.to_a.collect{ |b| b.to_s(16).rjust(2,'0') }
     options_hash = Hash.new
-    puts bytes.inspect
+
     # Subtype definition
     case bytes[0][0]
     when "0"
