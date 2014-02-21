@@ -20,6 +20,7 @@ class MPTCPConnection
     @subflows = Hash.new
     @total_payload = 0
     @state = "ESTABLISHED"
+    add_initial_subflow
   end
 
   def add_subflow(subflow)
@@ -34,6 +35,14 @@ class MPTCPConnection
                :sport => sport, 
                :ip_daddr => ip_daddr, 
                :dport => dport}]
+  end
+
+  def add_initial_subflow
+    initial_subflow = MPTCPSubflow.new(@ip_saddr, 
+                                       @sport,
+                                       @ip_daddr,
+                                       @dport)
+    add_subflow(initial_subflow)
   end
 
   def senders_token
