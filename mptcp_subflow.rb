@@ -23,7 +23,7 @@ class MPTCPSubflow
   def print
     puts "------------------------------MPTCPSubflow-------------------------------"
     puts "(#{@ip_saddr}, #{@sport}) <---> (#{@ip_daddr}, #{@dport})"
-    puts "Token: #{token}"
+    puts "(initial subflow)" if @token_bytes.nil?
   end
 
 end
