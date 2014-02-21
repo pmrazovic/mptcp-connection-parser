@@ -45,11 +45,12 @@ class MPTCPConnection
   end      
 
   def print
-    puts "---------------------------- MPTCPConnection ----------------------------"
+    puts "+-----------------------------------------------------------------------+"
+    puts "|                            MPTCPConnection                            |"
+    puts "+-----------------------------------------------------------------------+"
     puts "(#{@ip_saddr}, #{@sport}) <---> (#{@ip_daddr}, #{@dport})"
     puts "Sender's token: #{senders_token}"
     puts "Receiver's token: #{receivers_token}"
-    puts "-------------------------------------------------------------------------"
   end
 
 end
