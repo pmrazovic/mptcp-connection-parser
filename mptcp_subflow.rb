@@ -5,6 +5,7 @@ class MPTCPSubflow
   attr_accessor :dport
   attr_accessor :token_bytes
   attr_accessor :total_payload
+  attr_accessor :status
 
   def initialize(ip_saddr, sport, ip_daddr, dport, token_bytes = nil)
     @ip_saddr = ip_saddr
@@ -13,7 +14,7 @@ class MPTCPSubflow
     @dport = dport
     @token_bytes = token_bytes
     @total_payload = 0
-    @state = "ESTABLISHED"
+    @status = "ESTABLISHED"
   end
 
   def token
@@ -24,6 +25,7 @@ class MPTCPSubflow
     puts "------------------------------MPTCPSubflow-------------------------------"
     puts "(#{@ip_saddr}, #{@sport}) <---> (#{@ip_daddr}, #{@dport})"
     puts "(initial subflow)" if @token_bytes.nil?
+    puts "Total payload:".ljust(14, ' ') + " #{@total_payload} Bytes"
   end
 
 end

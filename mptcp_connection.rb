@@ -8,7 +8,7 @@ class MPTCPConnection
   attr_accessor :senders_key
   attr_accessor :receivers_key
   attr_accessor :subflows
-  attr_accessor :total_payload
+  attr_accessor :status
 
   def initialize(ip_saddr, sport, ip_daddr, dport, senders_key, receivers_key)
     @ip_saddr = ip_saddr
@@ -18,8 +18,7 @@ class MPTCPConnection
     @senders_key = senders_key
     @receivers_key = receivers_key
     @subflows = Hash.new
-    @total_payload = 0
-    @state = "ESTABLISHED"
+    @status = "ESTABLISHED"
     add_initial_subflow
   end
 
@@ -51,15 +50,24 @@ class MPTCPConnection
 
   def receivers_token
     Digest::SHA1.hexdigest(@receivers_key.pack("c*"))[0, 8].to_i(16)
-  end      
+  end   
+
+  def total_payload
+    total_payload_bytes = 0
+    @subflows.each_value do |subflow|
+      total_payload_bytes += subflow.total_payload
+    end
+    total_payload_bytes
+  end   
 
   def print
     puts "+-----------------------------------------------------------------------+"
     puts "|                            MPTCPConnection                            |"
     puts "+-----------------------------------------------------------------------+"
     puts "(#{@ip_saddr}, #{@sport}) <---> (#{@ip_daddr}, #{@dport})"
-    puts "Sender's token: #{senders_token}"
-    puts "Receiver's token: #{receivers_token}"
+    puts "Sender's token:".ljust(17, ' ') + " #{senders_token}"
+    puts "Receiver's token:".ljust(17, ' ') +  " #{receivers_token}"
+    puts "Total payload:".ljust(17, ' ') + " #{total_payload} Bytes"
   end
 
 end
