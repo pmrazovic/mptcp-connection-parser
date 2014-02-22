@@ -8,6 +8,15 @@ if ARGV.length == 0
   Process.exit
 end
 
+def find_subflow(mptcp_connections, ip_saddr, tcp_src, ip_daddr, tcp_dst)
+  belonging_subflow = nil
+  mptcp_connections.each do |conn|
+    belonging_subflow = conn.get_subflow(ip_saddr, tcp_src, ip_daddr, tcp_dst)
+    belonging_subflow = conn.get_subflow(ip_daddr, tcp_dst, ip_saddr, tcp_src) if belonging_subflow.nil?
+  end
+  belonging_subflow
+end
+
 filename = ARGV[0]
 packets = PacketFu::PcapFile.file_to_array filename
 mptcp_connections = Array.new
@@ -26,25 +35,35 @@ packets.each do |pkt|
       option_parsed = MPTCPOptionsParser.parse(mp_option.value)
       if option_parsed[:subtype] == 'MP_CAPABLE' && packet.tcp_flags.ack == 1 && packet.tcp_flags.syn == 0
         new_connection = MPTCPConnection.new(packet.ip_saddr,  
-                                                   packet.tcp_src, 
-                                                   packet.ip_daddr, 
-                                                   packet.tcp_dst, 
-                                                   option_parsed[:senders_key], 
-                                                   option_parsed[:receivers_key])
+                                             packet.tcp_src, 
+                                             packet.ip_daddr, 
+                                             packet.tcp_dst, 
+                                             option_parsed[:senders_key], 
+                                             option_parsed[:receivers_key])
         mptcp_connections << new_connection
       elsif option_parsed[:subtype] == 'MP_JOIN' && packet.tcp_flags.ack == 0 && packet.tcp_flags.syn == 1
         new_subflow = MPTCPSubflow.new(packet.ip_saddr, 
-                                             packet.tcp_src,
-                                             packet.ip_daddr,
-                                             packet.tcp_dst,
-                                             option_parsed[:receivers_token])
+                                       packet.tcp_src,
+                                       packet.ip_daddr,
+                                       packet.tcp_dst,
+                                       false,
+                                       option_parsed[:receivers_token])
         belonging_conn = mptcp_connections.select{|conn| [conn.receivers_token, conn.senders_token].include?(new_subflow.token)}.first
         belonging_conn.add_subflow(new_subflow)
+      elsif option_parsed[:subtype] == 'MP_JOIN' && packet.tcp_flags.ack == 1 && packet.tcp_flags.syn == 1
+        belonging_subflow = find_subflow(mptcp_connections, packet.ip_daddr, packet.tcp_dst, packet.ip_saddr, packet.tcp_src)
+        belonging_subflow.host_trunc_HMAC_bytes = option_parsed[:senders_trunc_HMAC] unless belonging_subflow.nil?
+        belonging_subflow.status = "ACK/SYN" unless belonging_subflow.nil?
+      elsif option_parsed[:subtype] == 'MP_JOIN' && packet.tcp_flags.ack == 1 && packet.tcp_flags.syn == 0
+        belonging_subflow = find_subflow(mptcp_connections, packet.ip_saddr, packet.tcp_src, packet.ip_daddr, packet.tcp_dst)
+        belonging_subflow.client_HMAC_bytes = option_parsed[:senders_HMAC] unless belonging_subflow.nil?
+        belonging_subflow.status = "ACK" unless belonging_subflow.nil?
+      elsif option_parsed[:subtype] == 'DSS' && (packet.tcp_flags.fin == 1 || packet.tcp_flags.rst == 1)
+        belonging_subflow = find_subflow(mptcp_connections, packet.ip_saddr, packet.tcp_src, packet.ip_daddr, packet.tcp_dst)
+        belonging_subflow.status = "FIN" unless belonging_subflow.nil?
       elsif option_parsed[:subtype] == 'DSS'
-        mptcp_connections.each do |conn|
-          belonging_subflow = conn.get_subflow(packet.ip_saddr, packet.tcp_src, packet.ip_daddr, packet.tcp_dst)
-          belonging_subflow.total_payload += packet.payload.bytes.length unless belonging_subflow.nil?
-        end        
+        belonging_subflow = find_subflow(mptcp_connections, packet.ip_saddr, packet.tcp_src, packet.ip_daddr, packet.tcp_dst)        
+        belonging_subflow.total_payload += packet.payload.bytes.length unless belonging_subflow.nil?
       end
     end
   end

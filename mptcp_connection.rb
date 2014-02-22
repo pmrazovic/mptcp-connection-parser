@@ -8,7 +8,6 @@ class MPTCPConnection
   attr_accessor :senders_key
   attr_accessor :receivers_key
   attr_accessor :subflows
-  attr_accessor :status
 
   def initialize(ip_saddr, sport, ip_daddr, dport, senders_key, receivers_key)
     @ip_saddr = ip_saddr
@@ -18,15 +17,16 @@ class MPTCPConnection
     @senders_key = senders_key
     @receivers_key = receivers_key
     @subflows = Hash.new
-    @status = "ESTABLISHED"
     add_initial_subflow
   end
 
   def add_subflow(subflow)
-    @subflows[{:ip_saddr => subflow.ip_saddr, 
-               :sport => subflow.sport, 
-               :ip_daddr => subflow.ip_daddr, 
-               :dport => subflow.dport}] = subflow
+    if get_subflow(subflow.ip_saddr, subflow.sport, subflow.ip_daddr, subflow.dport).nil?
+      @subflows[{:ip_saddr => subflow.ip_saddr, 
+                 :sport => subflow.sport, 
+                 :ip_daddr => subflow.ip_daddr, 
+                 :dport => subflow.dport}] = subflow
+    end
   end
 
   def get_subflow(ip_saddr, sport, ip_daddr, dport)
@@ -40,8 +40,13 @@ class MPTCPConnection
     initial_subflow = MPTCPSubflow.new(@ip_saddr, 
                                        @sport,
                                        @ip_daddr,
-                                       @dport)
+                                       @dport,
+                                       true)
     add_subflow(initial_subflow)
+  end
+
+  def status
+    get_subflow(@ip_saddr, @sport, @ip_daddr, @dport).status
   end
 
   def senders_token
@@ -65,9 +70,10 @@ class MPTCPConnection
     puts "|                            MPTCPConnection                            |"
     puts "+-----------------------------------------------------------------------+"
     puts "(#{@ip_saddr}, #{@sport}) <---> (#{@ip_daddr}, #{@dport})"
-    puts "Sender's token:".ljust(17, ' ') + " #{senders_token}"
-    puts "Receiver's token:".ljust(17, ' ') +  " #{receivers_token}"
-    puts "Total payload:".ljust(17, ' ') + " #{total_payload} Bytes"
+    puts "Status:".ljust(20, ' ') + " #{status}"
+    puts "Client token:".ljust(20, ' ') + " #{senders_token}"
+    puts "Host token:".ljust(20, ' ') +  " #{receivers_token}"
+    puts "Total payload:".ljust(20, ' ') + " #{total_payload} Bytes"
   end
 
 end
