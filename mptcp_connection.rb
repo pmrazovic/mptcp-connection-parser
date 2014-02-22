@@ -42,6 +42,7 @@ class MPTCPConnection
                                        @ip_daddr,
                                        @dport,
                                        true)
+    initial_subflow.packets_exchanged = 3
     add_subflow(initial_subflow)
   end
 
@@ -63,7 +64,15 @@ class MPTCPConnection
       total_payload_bytes += subflow.total_payload
     end
     total_payload_bytes
-  end   
+  end
+
+  def packets_exchanged
+    total_packets = 0
+    @subflows.each_value do |subflow|
+      total_packets += subflow.packets_exchanged
+    end
+    total_packets
+  end
 
   def print
     puts "+-----------------------------------------------------------------------+"
@@ -74,6 +83,7 @@ class MPTCPConnection
     puts "Client token:".ljust(20, ' ') + " #{senders_token}"
     puts "Host token:".ljust(20, ' ') +  " #{receivers_token}"
     puts "Total payload:".ljust(20, ' ') + " #{total_payload} Bytes"
+    puts "Packets exchanged:".ljust(20, ' ') + " #{packets_exchanged}"
   end
 
 end

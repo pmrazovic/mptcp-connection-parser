@@ -9,6 +9,7 @@ class MPTCPSubflow
   attr_accessor :total_payload
   attr_accessor :status
   attr_accessor :initial_subflow
+  attr_accessor :packets_exchanged
 
   def initialize(ip_saddr, sport, ip_daddr, dport, initial_subflow, token_bytes = nil)
     @ip_saddr = ip_saddr
@@ -19,6 +20,7 @@ class MPTCPSubflow
     @token_bytes = token_bytes
     @total_payload = 0
     @status = @initial_subflow ? "ACK" : "SYN"
+    @packets_exchanged = 1
   end
 
   def token
@@ -44,6 +46,7 @@ class MPTCPSubflow
       puts "Client HMAC:".ljust(20, ' ') + " #{client_HMAC}"
     end
     puts "Total payload:".ljust(20, ' ') + " #{@total_payload} Bytes"
+    puts "Packets exchanged:".ljust(20, ' ') + " #{@packets_exchanged}"
   end
 
 end
